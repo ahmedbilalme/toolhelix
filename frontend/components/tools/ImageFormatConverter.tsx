@@ -1,9 +1,10 @@
 "use client";
 import { useState, useCallback } from "react";
-import { convertImageFormat, downloadBase64, type ImageConvertResponse } from "@/lib/api";
+import { convertImageFormat, downloadBase64, errorMessage, type ImageConvertResponse } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
 const FORMATS = ["JPEG", "PNG", "WEBP", "GIF", "BMP", "TIFF"];
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 export default function ImageFormatConverter() {
   const [file, setFile] = useState<File | null>(null);
@@ -17,6 +18,10 @@ export default function ImageFormatConverter() {
   const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) {
       toast("Please upload an image file", "error");
+      return;
+    }
+    if (f.size > MAX_FILE_SIZE) {
+      toast(`Image is too large (max ${(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB)`, "error");
       return;
     }
     setFile(f);
@@ -39,8 +44,8 @@ export default function ImageFormatConverter() {
       const res = await convertImageFormat(file, targetFormat);
       setResult(res);
       toast("Image converted successfully!", "success");
-    } catch (e: any) {
-      toast(e.message ?? "Conversion failed", "error");
+    } catch (e: unknown) {
+      toast(errorMessage(e, "Conversion failed"), "error");
     } finally {
       setLoading(false);
     }
@@ -62,6 +67,10 @@ export default function ImageFormatConverter() {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => document.getElementById("img-file-input")?.click()}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("img-file-input")?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload an image file"
         style={{ marginBottom: "24px" }}
       >
         <input

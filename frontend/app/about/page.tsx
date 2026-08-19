@@ -24,16 +24,16 @@ export default function AboutPage() {
         <div className="container" style={{ maxWidth: "800px" }}>
           <div className="card" style={{ lineHeight: 1.9, fontSize: "0.95rem", color: "var(--color-text-muted)" }}>
             <p>
-              <strong style={{ color: "var(--color-text)" }}>ToolHelix started with a simple frustration:</strong> every time we needed a quick tool, we'd land on a page cluttered with ads, forced sign-ups, or broken features. We built ToolHelix to be everything those sites aren't.
+              <strong style={{ color: "var(--color-text)" }}>ToolHelix started with a simple frustration:</strong> every time we needed a quick tool, we’d land on a page cluttered with ads, forced sign-ups, or broken features. We built ToolHelix to be everything those sites aren’t.
             </p>
             <p>
-              A helix is individual strands woven into one stronger structure. That's the idea — many different tools, one cohesive platform. Whether you're a developer formatting JSON at midnight or a marketer compressing images before a deadline, ToolHelix is built to get out of your way and get the job done.
+              A helix is individual strands woven into one stronger structure. That’s the idea — many different tools, one cohesive platform. Whether you’re a developer formatting JSON at midnight or a marketer compressing images before a deadline, ToolHelix is built to get out of your way and get the job done.
             </p>
             <h2 style={{ fontFamily: "var(--font-display)", color: "var(--color-text)", fontSize: "1.3rem", marginTop: "32px" }}>What we stand for</h2>
             <ul style={{ paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
               <li><strong style={{ color: "var(--color-text)" }}>Zero friction.</strong> No account required. No paywalls on core features. Every tool, every time.</li>
               <li><strong style={{ color: "var(--color-text)" }}>Privacy first.</strong> Files processed server-side are never stored. Most tools run entirely in your browser.</li>
-              <li><strong style={{ color: "var(--color-text)" }}>Quality over quantity.</strong> We'd rather have 20 excellent tools than 200 mediocre ones.</li>
+              <li><strong style={{ color: "var(--color-text)" }}>Quality over quantity.</strong> We’d rather have a handful of excellent tools than hundreds of mediocre ones.</li>
               <li><strong style={{ color: "var(--color-text)" }}>Constantly improving.</strong> Check the <Link href="/changelog" style={{ color: "var(--color-accent)" }}>changelog</Link> — we ship new tools and improvements regularly.</li>
             </ul>
 

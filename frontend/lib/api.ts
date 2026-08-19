@@ -2,6 +2,13 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "";
 
+/** Extracts a human-readable message from a caught value of unknown type. */
+export function errorMessage(e: unknown, fallback = "Something went wrong"): string {
+  return e instanceof Error ? e.message : fallback;
+}
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
 // Generic fetcher with error handling
 async function apiFetch<T>(
   path: string,
@@ -51,7 +58,16 @@ export async function convertImageFormat(
   }
 }
 
+/** Formats the browser's Canvas API can actually encode. */
+const CANVAS_SUPPORTED_FORMATS = new Set(["jpeg", "jpg", "webp", "png"]);
+
 async function convertImageFormatClient(file: File, targetFormat: string): Promise<ImageConvertResponse> {
+  const fmtLowerCheck = targetFormat.toLowerCase();
+  if (!CANVAS_SUPPORTED_FORMATS.has(fmtLowerCheck)) {
+    throw new Error(
+      `Converting to ${targetFormat.toUpperCase()} requires the ToolHelix backend, which isn't reachable right now. Try again shortly, or convert to JPEG, PNG, or WEBP instead.`
+    );
+  }
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -118,7 +134,8 @@ export async function generateQRCode(req: QRCodeRequest): Promise<QRCodeResponse
     // QuickChart API fallback for QR generation
     const fg = (req.fg_color || "#000000").replace("#", "");
     const bg = (req.bg_color || "#ffffff").replace("#", "");
-    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(req.content)}&size=300&dark=${fg}&light=${bg}&margin=${req.border || 4}`;
+    const pixelSize = Math.max(50, Math.min((req.size || 10) * 30, 1000));
+    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(req.content)}&size=${pixelSize}&dark=${fg}&light=${bg}&margin=${req.border || 4}`;
     const resp = await fetch(qrUrl);
     const blob = await resp.blob();
     const buffer = await blob.arrayBuffer();
@@ -176,23 +193,23 @@ export async function formatJSON(
         type: Array.isArray(parsed) ? "Array" : typeof parsed,
         size: content.length,
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       return {
         success: false,
         valid: false,
-        error: e.message || "Invalid JSON syntax",
+        error: errorMessage(e, "Invalid JSON syntax"),
       };
     }
   }
 }
 
-function sortKeysDeep(obj: any): any {
+function sortKeysDeep(obj: JsonValue): JsonValue {
   if (Array.isArray(obj)) return obj.map(sortKeysDeep);
   if (obj !== null && typeof obj === "object") {
     return Object.keys(obj)
       .sort()
-      .reduce((acc: any, key: string) => {
-        acc[key] = sortKeysDeep(obj[key]);
+      .reduce((acc: Record<string, JsonValue>, key: string) => {
+        acc[key] = sortKeysDeep((obj as Record<string, JsonValue>)[key]);
         return acc;
       }, {});
   }
@@ -379,7 +396,7 @@ async function resizeImageClient(
       const origW = img.naturalWidth || img.width;
       const origH = img.naturalHeight || img.height;
 
-      let newW = width;
+      const newW = width;
       let newH = height;
       if (maintainAspect || height <= 0) {
         const ratio = width / origW;

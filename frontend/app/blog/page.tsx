@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Breadcrumb from "@/components/ui/Breadcrumb";
-import ToolCard from "@/components/ui/ToolCard";
 import { TOOLS } from "@/lib/tools";
 
 export const metadata: Metadata = {

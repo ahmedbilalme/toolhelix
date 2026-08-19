@@ -2,16 +2,24 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TOOLS, CATEGORIES, searchTools, type ToolMeta } from "@/lib/tools";
+import { TOOLS, searchTools } from "@/lib/tools";
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
+  const [prevQuery, setPrevQuery] = useState(query);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const results = query ? searchTools(query).slice(0, 8) : TOOLS.slice(0, 8);
+
+  // Reset the highlighted result whenever the query changes, computed during
+  // render rather than in an effect (see https://react.dev/learn/you-might-not-need-an-effect).
+  if (query !== prevQuery) {
+    setPrevQuery(query);
+    setActiveIdx(0);
+  }
 
   const close = useCallback(() => {
     setOpen(false);
@@ -36,10 +44,6 @@ export default function CommandPalette() {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
   }, [open]);
 
-  useEffect(() => {
-    setActiveIdx(0);
-  }, [query]);
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -58,7 +62,14 @@ export default function CommandPalette() {
 
   return (
     <div className="cmd-overlay" onClick={close}>
-      <div className="cmd-panel" onClick={(e) => e.stopPropagation()} onKeyDown={handleKeyDown}>
+      <div
+        className="cmd-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search tools"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
         <div style={{ display: "flex", alignItems: "center", padding: "0 24px", borderBottom: "1px solid var(--color-border)" }}>
           <span style={{ color: "var(--color-text-muted)", fontSize: "1.2rem", marginRight: "12px" }}>⌕</span>
           <input

@@ -62,7 +62,11 @@ export default function WordCounter() {
                 key={label}
                 className="card"
                 style={{ textAlign: "center", cursor: "pointer" }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Copy ${label}: ${value}`}
                 onClick={async () => { await copyToClipboard(value); toast(`Copied ${label}`, "success"); }}
+                onKeyDown={async (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); await copyToClipboard(value); toast(`Copied ${label}`, "success"); } }}
               >
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "1.6rem", fontWeight: 700, color, lineHeight: 1, marginBottom: "6px" }}>{value}</div>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: "0.75rem", color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { TOOLS } from "@/lib/tools";
 
 export default function NotFound() {
   return (
@@ -49,8 +50,8 @@ export default function NotFound() {
       </h1>
 
       <p style={{ color: "var(--color-text-muted)", maxWidth: "400px", marginBottom: "32px", lineHeight: 1.6 }}>
-        The page you&apos;re looking for doesn&apos;t exist — or maybe it was renamed or moved. 
-        Either way, we&apos;ve got {`>`}20 tools waiting for you.
+        The page you&apos;re looking for doesn&apos;t exist — or maybe it was renamed or moved.
+        Either way, we&apos;ve got {TOOLS.length}+ tools waiting for you.
       </p>
 
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>

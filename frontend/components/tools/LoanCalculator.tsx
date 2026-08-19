@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { copyToClipboard } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
@@ -10,28 +10,34 @@ export default function LoanCalculator() {
   const [tenureType, setTenureType] = useState<"years" | "months">("years");
   const { toast, ToastContainer } = useToast();
 
+  const MAX_MONTHS = 1200; // 100 years — generous upper bound that keeps the loop bounded
+
   const result = useMemo(() => {
     const P = parseFloat(principal) || 0;
     const r = (parseFloat(rate) || 0) / 100 / 12;
-    const n = (parseFloat(tenure) || 0) * (tenureType === "years" ? 12 : 1);
+    const nRaw = (parseFloat(tenure) || 0) * (tenureType === "years" ? 12 : 1);
+    const n = Math.min(nRaw, MAX_MONTHS);
 
-    if (P <= 0 || r <= 0 || n <= 0) return null;
+    if (P <= 0 || r < 0 || n <= 0) return null;
 
-    const emi = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    // 0% interest is valid financing — EMI is simply principal split evenly.
+    const emi = r === 0 ? P / n : (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
     const totalPayment = emi * n;
     const totalInterest = totalPayment - P;
 
-    // Amortization schedule (first 12 + last row)
     const schedule: { month: number; emi: number; principal: number; interest: number; balance: number }[] = [];
     let balance = P;
     for (let i = 1; i <= n; i++) {
-      const interestPart = balance * r;
+      const interestPart = r === 0 ? 0 : balance * r;
       const principalPart = emi - interestPart;
       balance -= principalPart;
       schedule.push({ month: i, emi, principal: principalPart, interest: interestPart, balance: Math.max(0, balance) });
     }
 
-    return { emi, totalPayment, totalInterest, schedule: schedule.slice(0, 12) };
+    // Show the first 12 months, plus the final payoff row when the loan runs longer.
+    const visibleSchedule = n > 12 ? [...schedule.slice(0, 12), schedule[schedule.length - 1]] : schedule;
+
+    return { emi, totalPayment, totalInterest, schedule: visibleSchedule, truncated: nRaw > MAX_MONTHS };
   }, [principal, rate, tenure, tenureType]);
 
   const fmt = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -40,7 +46,7 @@ export default function LoanCalculator() {
     <div style={{ maxWidth: "720px", margin: "0 auto" }}>
       <ToastContainer />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+      <div className="loan-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
         <div>
           <label style={{ display: "block", marginBottom: "8px", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.85rem" }}>Loan Amount</label>
           <input type="number" min="0" value={principal} onChange={(e) => setPrincipal(e.target.value)} className="input" placeholder="500000" />
@@ -51,8 +57,8 @@ export default function LoanCalculator() {
         </div>
         <div>
           <label style={{ display: "block", marginBottom: "8px", fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.85rem" }}>Loan Tenure</label>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <input type="number" min="1" value={tenure} onChange={(e) => setTenure(e.target.value)} className="input" style={{ flex: 1 }} />
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <input type="number" min="1" max="1200" value={tenure} onChange={(e) => setTenure(e.target.value)} className="input" style={{ flex: 1, minWidth: "80px" }} />
             <div style={{ display: "flex" }}>
               {(["years", "months"] as const).map((t) => (
                 <button key={t} onClick={() => setTenureType(t)} className={`btn ${tenureType === t ? "btn-primary" : "btn-secondary"} btn-sm`} style={{ borderRadius: t === "years" ? "8px 0 0 8px" : "0 8px 8px 0", textTransform: "capitalize" }}>
@@ -67,7 +73,7 @@ export default function LoanCalculator() {
       {result && (
         <>
           {/* Summary cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
+          <div className="loan-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
             {[
               { label: "Monthly EMI", value: `$${fmt(result.emi)}`, color: "var(--color-accent)", note: "per month" },
               { label: "Total Interest", value: `$${fmt(result.totalInterest)}`, color: "#EF4444", note: `${((result.totalInterest / parseFloat(principal)) * 100).toFixed(1)}% of principal` },
@@ -84,7 +90,7 @@ export default function LoanCalculator() {
           {/* Pie chart approximation using conic-gradient */}
           <div className="card" style={{ marginBottom: "24px" }}>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1rem", marginBottom: "16px" }}>Payment breakdown</h3>
-            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
               <div style={{
                 width: "120px",
                 height: "120px",
@@ -113,7 +119,9 @@ export default function LoanCalculator() {
           {/* Amortization table */}
           <div className="result-panel">
             <div className="result-panel-header">
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.85rem" }}>Amortization schedule (first 12 months)</span>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.85rem" }}>
+                Amortization schedule {result.schedule.length > 12 ? "(first 12 months + payoff)" : ""}
+              </span>
             </div>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem", fontFamily: "var(--font-mono)" }}>
@@ -125,21 +133,38 @@ export default function LoanCalculator() {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.schedule.map((row) => (
-                    <tr key={row.month} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-text-muted)" }}>{row.month}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right" }}>${fmt(row.emi)}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-accent)" }}>${fmt(row.principal)}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: "#EF4444" }}>${fmt(row.interest)}</td>
-                      <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-text-muted)" }}>${fmt(row.balance)}</td>
-                    </tr>
-                  ))}
+                  {result.schedule.map((row, i) => {
+                    const isPayoffGap = result.schedule.length > 12 && i === result.schedule.length - 1;
+                    return (
+                      <Fragment key={row.month}>
+                        {isPayoffGap && (
+                          <tr>
+                            <td colSpan={5} style={{ padding: "6px 12px", textAlign: "center", color: "var(--color-text-faint)" }}>⋯</td>
+                          </tr>
+                        )}
+                        <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-text-muted)" }}>{row.month}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right" }}>${fmt(row.emi)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-accent)" }}>${fmt(row.principal)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "#EF4444" }}>${fmt(row.interest)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--color-text-muted)" }}>${fmt(row.balance)}</td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         </>
       )}
+
+      <style>{`
+        @media (max-width: 560px) {
+          .loan-grid { grid-template-columns: 1fr !important; }
+          .loan-summary { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }

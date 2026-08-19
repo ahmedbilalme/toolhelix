@@ -14,6 +14,16 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+/** Expands #rgb shorthand and validates full 6-digit hex. Returns null if invalid. */
+function normalizeHex(hex: string): string | null {
+  let h = hex.trim();
+  if (!h.startsWith("#")) h = "#" + h;
+  if (/^#[0-9A-Fa-f]{3}$/.test(h)) {
+    h = "#" + h.slice(1).split("").map((c) => c + c).join("");
+  }
+  return /^#[0-9A-Fa-f]{6}$/.test(h) ? h.toLowerCase() : null;
+}
+
 function hexToHsl(hex: string): [number, number, number] {
   let r = 0, g = 0, b = 0;
   if (hex.length === 7) {
@@ -22,7 +32,8 @@ function hexToHsl(hex: string): [number, number, number] {
     b = parseInt(hex.slice(5, 7), 16) / 255;
   }
   const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, l = (max + min) / 2;
+  const l = (max + min) / 2;
+  let h = 0, s = 0;
   if (max !== min) {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -79,8 +90,13 @@ export default function ColorPaletteGenerator() {
   const { toast, ToastContainer } = useToast();
 
   const generate = useCallback(() => {
-    setPalette(generatePalette(baseColor, harmony));
-  }, [baseColor, harmony]);
+    const normalized = normalizeHex(baseColor);
+    if (!normalized) {
+      toast("Enter a valid hex color, e.g. #6E56CF", "error");
+      return;
+    }
+    setPalette(generatePalette(normalized, harmony));
+  }, [baseColor, harmony, toast]);
 
   const copyColor = async (hex: string, idx: number) => {
     await copyToClipboard(hex);
@@ -140,8 +156,12 @@ export default function ColorPaletteGenerator() {
             {palette.map((hex, i) => (
               <div
                 key={i}
+                role="button"
+                tabIndex={0}
+                aria-label={`Copy color ${hex}`}
                 style={{ flex: 1, background: hex, cursor: "pointer", transition: "flex 250ms var(--ease-spring)", display: "flex", alignItems: "flex-end", padding: "8px" }}
                 onClick={() => copyColor(hex, i)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyColor(hex, i); } }}
                 title={`Click to copy ${hex}`}
               >
               </div>
@@ -154,6 +174,10 @@ export default function ColorPaletteGenerator() {
               <div
                 key={i}
                 onClick={() => copyColor(hex, i)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyColor(hex, i); } }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Copy color ${hex}`}
                 style={{
                   background: "var(--color-surface)",
                   border: `1px solid ${copiedIdx === i ? "var(--color-success)" : "var(--color-border)"}`,
