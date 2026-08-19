@@ -1,7 +1,9 @@
 "use client";
 import { useState, useCallback } from "react";
-import { compressImage, downloadBase64, formatBytes } from "@/lib/api";
+import { compressImage, downloadBase64, formatBytes, errorMessage, type ImageCompressResponse } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 export default function ImageCompressor() {
   const [file, setFile] = useState<File | null>(null);
@@ -9,12 +11,13 @@ export default function ImageCompressor() {
   const [quality, setQuality] = useState(80);
   const [format, setFormat] = useState("WEBP");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImageCompressResponse | null>(null);
   const [dragging, setDragging] = useState(false);
   const { toast, ToastContainer } = useToast();
 
   const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) { toast("Upload an image file", "error"); return; }
+    if (f.size > MAX_FILE_SIZE) { toast(`Image is too large (max ${formatBytes(MAX_FILE_SIZE)})`, "error"); return; }
     setFile(f);
     setResult(null);
     setPreview(URL.createObjectURL(f));
@@ -27,8 +30,8 @@ export default function ImageCompressor() {
       const res = await compressImage(file, quality, format);
       setResult(res);
       toast(`Saved ${res.savings_percent}% — ${formatBytes(res.compressed_size)}`, "success");
-    } catch (e: any) {
-      toast(e.message, "error");
+    } catch (e: unknown) {
+      toast(errorMessage(e), "error");
     } finally {
       setLoading(false);
     }
@@ -45,6 +48,10 @@ export default function ImageCompressor() {
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         onClick={() => document.getElementById("compress-input")?.click()}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("compress-input")?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload an image to compress"
         style={{ marginBottom: "24px" }}
       >
         <input id="compress-input" type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />

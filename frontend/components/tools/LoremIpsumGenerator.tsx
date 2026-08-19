@@ -73,7 +73,7 @@ export default function LoremIpsumGenerator() {
           </div>
           <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "0.85rem", fontFamily: "var(--font-display)" }}>
             <input type="checkbox" checked={startWithLorem} onChange={(e) => setStartWithLorem(e.target.checked)} style={{ accentColor: "var(--color-accent)" }} />
-            Start with "Lorem ipsum"
+            Start with “Lorem ipsum”
           </label>
         </div>
 

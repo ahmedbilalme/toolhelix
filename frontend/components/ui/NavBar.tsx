@@ -4,17 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { CATEGORIES } from "@/lib/tools";
 
-const NAV_LINKS = [
-  { label: "All Tools", href: "/tools" },
-  { label: "Blog",      href: "/blog" },
-  { label: "About",     href: "/about" },
-];
-
 export default function NavBar() {
   const [scrolled,    setScrolled]    = useState(false);
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [catMenuOpen, setCatMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
   const catRef   = useRef<HTMLDivElement>(null);
 
   /* ── scroll shadow ──────────────────────────────────────────────────── */
@@ -25,10 +20,13 @@ export default function NavBar() {
   }, []);
 
   /* ── close mobile menu on route change ─────────────────────────────── */
-  useEffect(() => {
+  // Computed during render rather than in an effect — see
+  // https://react.dev/learn/you-might-not-need-an-effect
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
     setMobileOpen(false);
     setCatMenuOpen(false);
-  }, [pathname]);
+  }
 
   /* ── close category dropdown on outside click ───────────────────────── */
   useEffect(() => {
@@ -242,7 +240,7 @@ export default function NavBar() {
                 fontFamily: "var(--font-display)",
                 transition: "border-color 200ms, box-shadow 200ms, color 200ms",
               }}
-              aria-label="Open search (Ctrl+K)"
+              aria-label="Open search (Ctrl+K or Cmd+K)"
             >
               <span style={{ fontSize: "0.9rem" }}>⌕</span>
               <span className="search-label">Search</span>

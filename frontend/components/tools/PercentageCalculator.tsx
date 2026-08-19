@@ -15,6 +15,7 @@ export default function PercentageCalculator() {
   let result: number | null = null;
   let formula = "";
   let explanation = "";
+  let zeroError = "";
 
   if (!isNaN(na) && !isNaN(nb)) {
     if (mode === "percent-of") {
@@ -26,12 +27,16 @@ export default function PercentageCalculator() {
         result = ((nb - na) / Math.abs(na)) * 100;
         formula = `((${nb} - ${na}) / |${na}|) × 100`;
         explanation = `${result >= 0 ? "Increase" : "Decrease"} of ${Math.abs(result).toFixed(2)}% from ${na} to ${nb}`;
+      } else {
+        zeroError = "Percentage change from 0 is undefined — enter a non-zero original value.";
       }
     } else {
       if (nb !== 0) {
         result = (na / nb) * 100;
         formula = `(${na} / ${nb}) × 100`;
         explanation = `${na} is ${result.toFixed(4)}% of ${nb}`;
+      } else {
+        zeroError = "Can't express a percentage of 0 — enter a non-zero \"Whole\" value.";
       }
     }
   }
@@ -74,8 +79,14 @@ export default function PercentageCalculator() {
         </div>
 
         {result !== null && (
-          <div style={{ padding: "20px", background: "var(--color-base)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", cursor: "pointer" }}
-            onClick={async () => { await copyToClipboard(result!.toFixed(4)); toast("Copied!", "success"); }}>
+          <div
+            style={{ padding: "20px", background: "var(--color-base)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", cursor: "pointer" }}
+            role="button"
+            tabIndex={0}
+            aria-label="Copy result"
+            onClick={async () => { await copyToClipboard(result!.toFixed(4)); toast("Copied!", "success"); }}
+            onKeyDown={async (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); await copyToClipboard(result!.toFixed(4)); toast("Copied!", "success"); } }}
+          >
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "2rem", fontWeight: 700, color: "var(--color-accent)", marginBottom: "4px" }}>
               {mode === "percent-change" || mode === "what-percent"
                 ? `${result.toFixed(2)}%`
@@ -90,6 +101,12 @@ export default function PercentageCalculator() {
             <div style={{ fontSize: "0.72rem", color: "var(--color-text-faint)", marginTop: "8px" }}>
               Click to copy result
             </div>
+          </div>
+        )}
+
+        {result === null && zeroError && (
+          <div style={{ padding: "16px 20px", background: "rgba(239,68,68,0.08)", border: "1px solid var(--color-error)", borderRadius: "var(--radius-md)", color: "#f87171", fontSize: "0.85rem" }}>
+            ⚠ {zeroError}
           </div>
         )}
       </div>

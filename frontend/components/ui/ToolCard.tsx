@@ -17,7 +17,11 @@ export default function ToolCard({ tool, index = 0, showFavorite = true }: ToolC
   const [favorited, setFavorited] = useState(false);
   const [heartPop, setHeartPop] = useState(false);
 
+  // Synchronizes with localStorage (an external system unavailable during SSR),
+  // so this must run in an effect rather than during render — starting from
+  // `false` on the server and correcting after mount avoids a hydration mismatch.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFavorited(isFavorite(tool.id));
   }, [tool.id]);
 
@@ -34,21 +38,27 @@ export default function ToolCard({ tool, index = 0, showFavorite = true }: ToolC
   );
 
   return (
-    <Link href={`/tools/${tool.category}/${tool.slug}`} style={{ textDecoration: "none" }}>
-      <article
-        className="card tool-card animate-slide-up"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "14px",
-          cursor: "pointer",
-          animationDelay: `${delay}ms`,
-          height: "100%",
-          position: "relative",
-          overflow: "hidden",
-          transition: "border-color 250ms, box-shadow 250ms, transform 200ms",
-        }}
-      >
+    <article
+      className="card tool-card animate-slide-up"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+        cursor: "pointer",
+        animationDelay: `${delay}ms`,
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        transition: "border-color 250ms, box-shadow 250ms, transform 200ms",
+      }}
+    >
+      {/* Stretched link: makes the whole card a click target without nesting
+          interactive elements (e.g. the favorite button) inside an <a>. */}
+      <Link
+        href={`/tools/${tool.category}/${tool.slug}`}
+        aria-label={`Open ${tool.name}`}
+        style={{ position: "absolute", inset: 0, zIndex: 1 }}
+      />
         {/* Top accent gradient line */}
         <div
           style={{
@@ -102,7 +112,7 @@ export default function ToolCard({ tool, index = 0, showFavorite = true }: ToolC
             {tool.icon}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative", zIndex: 2 }}>
             {tool.isNew && <span className="badge badge-blue">New</span>}
             {tool.isFeatured && <span className="badge badge-violet">Popular</span>}
 
@@ -199,7 +209,6 @@ export default function ToolCard({ tool, index = 0, showFavorite = true }: ToolC
           .tool-card:hover .tool-card-title { color: ${cat?.color ?? "var(--color-accent)"} !important; }
           .fav-btn:hover { color: #f472b6 !important; transform: scale(1.2) !important; }
         `}</style>
-      </article>
-    </Link>
+    </article>
   );
 }

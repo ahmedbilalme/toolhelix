@@ -13,6 +13,7 @@ function convertCase(text: string, type: CaseType): string {
     case "sentence": return text.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, (c) => c.toUpperCase());
     case "camel": {
       const w = text.toLowerCase().split(/[\s_\-]+/).filter(Boolean);
+      if (w.length === 0) return "";
       return w[0] + w.slice(1).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join("");
     }
     case "pascal": return text.toLowerCase().split(/[\s_\-]+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join("");
@@ -57,10 +58,21 @@ export default function CaseConverter() {
               key={c.id}
               className="card animate-slide-up"
               style={{ animationDelay: `${i * 40}ms`, cursor: input ? "pointer" : "default" }}
+              role="button"
+              tabIndex={input ? 0 : -1}
+              aria-label={`Copy ${c.label}`}
               onClick={async () => {
                 if (!input) return;
                 await copyToClipboard(converted);
                 toast(`${c.label} copied!`, "success");
+              }}
+              onKeyDown={async (e) => {
+                if (!input) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  await copyToClipboard(converted);
+                  toast(`${c.label} copied!`, "success");
+                }
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>

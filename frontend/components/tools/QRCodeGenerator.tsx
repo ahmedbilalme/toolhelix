@@ -1,6 +1,6 @@
 "use client";
-import { useState, useCallback } from "react";
-import { generateQRCode, downloadBase64 } from "@/lib/api";
+import { useState } from "react";
+import { generateQRCode, downloadBase64, errorMessage } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
 export default function QRCodeGenerator() {
@@ -19,8 +19,8 @@ export default function QRCodeGenerator() {
       const res = await generateQRCode({ content, fg_color: fgColor, bg_color: bgColor, size });
       setResult(res);
       toast("QR code generated!", "success");
-    } catch (e: any) {
-      toast(e.message ?? "Generation failed", "error");
+    } catch (e: unknown) {
+      toast(errorMessage(e, "Generation failed"), "error");
     } finally {
       setLoading(false);
     }
@@ -30,7 +30,7 @@ export default function QRCodeGenerator() {
     <div style={{ maxWidth: "720px", margin: "0 auto" }}>
       <ToastContainer />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "32px", alignItems: "start" }}>
+      <div className="qr-layout" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "32px", alignItems: "start" }}>
         {/* Controls */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div>
@@ -77,8 +77,8 @@ export default function QRCodeGenerator() {
         </div>
 
         {/* Preview */}
-        <div style={{ width: "220px", flexShrink: 0 }}>
-          <div style={{
+        <div className="qr-preview" style={{ width: "220px", flexShrink: 0 }}>
+          <div className="qr-preview-box" style={{
             width: "220px",
             height: "220px",
             background: result ? "transparent" : "var(--color-surface)",
@@ -110,6 +110,14 @@ export default function QRCodeGenerator() {
           )}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 600px) {
+          .qr-layout { grid-template-columns: 1fr !important; }
+          .qr-preview { width: 100% !important; }
+          .qr-preview-box { width: 100% !important; height: auto !important; aspect-ratio: 1 / 1; }
+        }
+      `}</style>
     </div>
   );
 }

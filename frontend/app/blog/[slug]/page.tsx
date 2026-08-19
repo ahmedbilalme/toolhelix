@@ -26,15 +26,15 @@ const POSTS: Record<string, {
     relatedTools: ["json-formatter", "regex-tester", "base64", "code-diff"],
     content: (
       <>
-        <p>The best developer tools are the ones that disappear. You paste some JSON, it formats instantly, and you move on. No account, no loading screen, no 12-step wizard.</p>
+        <p>The best developer tools are the ones that disappear. You paste some JSON, it formats instantly, and you move on. No account, no loading screen, no 12&#8209;step wizard.</p>
         <p>Here are the tools we reach for most — and the specific scenarios where each one earns its keep.</p>
         <h2>JSON Formatter & Validator</h2>
-        <p>When an API returns a wall of minified JSON, your first instinct is to paste it somewhere readable. A good formatter handles malformed JSON gracefully — telling you exactly which line and column has the error, not just "invalid JSON."</p>
+        <p>When an API returns a wall of minified JSON, your first instinct is to paste it somewhere readable. A good formatter handles malformed JSON gracefully — telling you exactly which line and column has the error, not just “invalid JSON.”</p>
         <p>Our JSON Formatter also lets you sort keys alphabetically (useful when comparing two responses) and minify back to one line when you need to copy a payload into a curl command.</p>
         <h2>Regex Tester</h2>
         <p>Regular expressions are one of those things that look simple until you actually need to write one. A live tester that highlights matches as you type — with support for capture groups and all flags — cuts the feedback loop from minutes to seconds.</p>
         <h2>Base64 Encoder / Decoder</h2>
-        <p>More common than you'd think: auth headers, data URIs, JWT payloads. Being able to decode a Base64 string without leaving the browser is a small thing that saves real time.</p>
+        <p>More common than you’d think: auth headers, data URIs, JWT payloads. Being able to decode a Base64 string without leaving the browser is a small thing that saves real time.</p>
         <h2>Code Diff Checker</h2>
         <p>Paste two versions of a config file or function and see exactly what changed — line by line, color-coded. Particularly useful when reviewing changes in environments without git access.</p>
       </>
@@ -49,16 +49,16 @@ const POSTS: Record<string, {
     relatedTools: ["image-format-converter", "image-compressor", "image-resizer"],
     content: (
       <>
-        <p>Choosing the wrong image format is one of the easiest ways to make a fast site slow. Here's the quick version of what you need to know.</p>
+        <p>Choosing the wrong image format is one of the easiest ways to make a fast site slow. Here’s the quick version of what you need to know.</p>
         <h2>JPEG — for photos</h2>
-        <p>JPEG uses lossy compression, which means it throws away data you're unlikely to notice. This makes it excellent for photographs with smooth color gradients. Terrible for screenshots, logos, or anything with sharp edges — those get blocky artifacts fast.</p>
+        <p>JPEG uses lossy compression, which means it throws away data you’re unlikely to notice. This makes it excellent for photographs with smooth color gradients. Terrible for screenshots, logos, or anything with sharp edges — those get blocky artifacts fast.</p>
         <p>Use JPEG when: photos, product images, anything with rich color and no transparency needed.</p>
         <h2>PNG — for graphics</h2>
-        <p>PNG is lossless and supports full transparency (alpha channel). It's larger than JPEG for photos, but smaller and sharper for logos, icons, screenshots, and any image with text.</p>
+        <p>PNG is lossless and supports full transparency (alpha channel). It’s larger than JPEG for photos, but smaller and sharper for logos, icons, screenshots, and any image with text.</p>
         <p>Use PNG when: logos, icons, screenshots, images that need transparency.</p>
         <h2>WEBP — for web</h2>
-        <p>WEBP is Google's format designed to replace both JPEG and PNG. It produces files roughly 25–35% smaller than JPEG at equivalent quality, and it supports transparency. Browser support is now near-universal.</p>
-        <p>Use WEBP when: you're optimizing for web performance and can control the serving environment.</p>
+        <p>WEBP is Google’s format designed to replace both JPEG and PNG. It produces files roughly 25–35% smaller than JPEG at equivalent quality, and it supports transparency. Browser support is now near-universal.</p>
+        <p>Use WEBP when: you’re optimizing for web performance and can control the serving environment.</p>
         <h2>How to convert</h2>
         <p>Our Image Format Converter handles all three (plus GIF, BMP, and TIFF). Upload, pick your target format, download. No quality slider needed — we handle the sensible defaults.</p>
       </>
@@ -73,20 +73,20 @@ const POSTS: Record<string, {
     relatedTools: ["password-generator", "base64"],
     content: (
       <>
-        <p>Most password advice is either too vague ("use a strong password") or too paranoid ("change it every 90 days"). Here's what the math actually says.</p>
+        <p>Most password advice is either too vague (“use a strong password”) or too paranoid (“change it every 90 days”). Here’s what the math actually says.</p>
         <h2>Length matters more than complexity</h2>
         <p>A 20-character lowercase-only password has more entropy than a 10-character password with uppercase, numbers, and symbols. The math: 26^20 = ~2 × 10^28 vs 94^10 = ~5 × 10^19. Length wins by an order of magnitude.</p>
-        <p>The practical rule: aim for 16+ characters. Beyond that, you're firmly into "will never be cracked by brute force in the lifetime of the universe" territory.</p>
+        <p>The practical rule: aim for 16+ characters. Beyond that, you’re firmly into “will never be cracked by brute force in the lifetime of the universe” territory.</p>
         <h2>Randomness is non-negotiable</h2>
-        <p>The flaw in most human-chosen passwords isn't length — it's predictability. People pick words, dates, and names. Attackers use dictionaries. Our Password Generator uses the Web Crypto API, which is the same randomness source used in cryptographic applications. Nothing about the output is predictable.</p>
-        <h2>Character sets: add them, but don't obsess</h2>
-        <p>Adding symbols and numbers to a password does increase its entropy — but if you're already at 20+ random characters, the marginal gain is small. Symbols matter more for shorter passwords where every bit of entropy counts.</p>
+        <p>The flaw in most human-chosen passwords isn’t length — it’s predictability. People pick words, dates, and names. Attackers use dictionaries. Our Password Generator uses the Web Crypto API, which is the same randomness source used in cryptographic applications. Nothing about the output is predictable.</p>
+        <h2>Character sets: add them, but don’t obsess</h2>
+        <p>Adding symbols and numbers to a password does increase its entropy — but if you’re already at 20+ random characters, the marginal gain is small. Symbols matter more for shorter passwords where every bit of entropy counts.</p>
         <h2>What this means in practice</h2>
         <ul>
-          <li>Use a password manager. This solves the "can't remember 50 unique passwords" problem.</li>
+          <li>Use a password manager. This solves the “can’t remember 50 unique passwords” problem.</li>
           <li>Generate random passwords. Never compose them yourself.</li>
           <li>Use 16+ characters for anything that matters.</li>
-          <li>Enable 2FA wherever possible — it's the single biggest security upgrade available.</li>
+          <li>Enable 2FA wherever possible — it’s the single biggest security upgrade available.</li>
         </ul>
       </>
     ),

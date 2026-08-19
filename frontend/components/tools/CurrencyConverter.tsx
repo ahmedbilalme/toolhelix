@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { copyToClipboard } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 
@@ -54,7 +54,9 @@ export default function CurrencyConverter() {
       .then((r) => r.json())
       .then((data) => {
         if (data.rates) {
-          setRates(data.rates);
+          // Merge onto the fallback table so any currency the live API omits
+          // still has a usable (if slightly stale) rate instead of becoming NaN.
+          setRates((prev) => ({ ...prev, ...data.rates }));
           setRatesSource("live");
         }
       })
@@ -68,9 +70,6 @@ export default function CurrencyConverter() {
   const rate = rates[to] / rates[from];
 
   const swap = () => { setFrom(to); setTo(from); };
-
-  const fromCur = CURRENCIES.find((c) => c.code === from);
-  const toCur   = CURRENCIES.find((c) => c.code === to);
 
   return (
     <div style={{ maxWidth: "640px", margin: "0 auto" }}>

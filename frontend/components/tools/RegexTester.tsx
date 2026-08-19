@@ -1,16 +1,31 @@
 "use client";
 import { useState, useMemo } from "react";
-import { copyToClipboard } from "@/lib/api";
+import { copyToClipboard, errorMessage } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+
+const MAX_MATCHES = 1000;
+
+function escapeHtml(str: string): string {
+  return str.replace(/[&<>"']/g, (c) => {
+    switch (c) {
+      case "&": return "&amp;";
+      case "<": return "&lt;";
+      case ">": return "&gt;";
+      case '"': return "&quot;";
+      case "'": return "&#39;";
+      default: return c;
+    }
+  });
+}
 
 export default function RegexTester() {
   const [pattern, setPattern] = useState("");
-  const [flags, setFlags] = useState({ g: true, i: false, m: false });
+  const [flags, setFlags] = useState({ g: true, i: false, m: false, s: false });
   const [testString, setTestString] = useState("");
   const { toast, ToastContainer } = useToast();
 
   const { matches, error, highlighted } = useMemo(() => {
-    if (!pattern || !testString) return { matches: [], error: null, highlighted: testString };
+    if (!pattern || !testString) return { matches: [], error: null, highlighted: escapeHtml(testString) };
     try {
       const flagStr = Object.entries(flags).filter(([, v]) => v).map(([k]) => k).join("");
       const re = new RegExp(pattern, flagStr);
@@ -18,25 +33,34 @@ export default function RegexTester() {
 
       if (flags.g) {
         let m: RegExpExecArray | null;
-        while ((m = re.exec(testString)) !== null) {
+        let guard = 0;
+        while ((m = re.exec(testString)) !== null && guard < MAX_MATCHES) {
           matches.push({ match: m[0], index: m.index, groups: m.slice(1) });
-          if (!flags.g || re.lastIndex === 0) break;
+          // Force forward progress even on zero-width matches (e.g. `\b`, lookaheads)
+          // so this can never spin forever.
+          re.lastIndex = m.index + (m[0].length || 1);
+          guard++;
         }
       } else {
         const m = re.exec(testString);
         if (m) matches.push({ match: m[0], index: m.index, groups: m.slice(1) });
       }
 
-      // Build highlighted HTML
-      const flagStr2 = "g" + Object.entries(flags).filter(([k, v]) => k !== "g" && v).map(([k]) => k).join("");
-      const reGlobal = new RegExp(pattern, flagStr2);
-      const highlighted = testString.replace(reGlobal, (m) =>
-        `<mark style="background:rgba(110,86,207,0.35);color:#a78bfa;border-radius:3px;padding:1px 2px;">${m}</mark>`
-      );
+      // Build highlighted HTML from the matches we already found, escaping every
+      // segment so test-string content is always rendered as text, never as HTML.
+      let cursor = 0;
+      let html = "";
+      for (const m of matches) {
+        if (m.index < cursor) continue;
+        html += escapeHtml(testString.slice(cursor, m.index));
+        html += `<mark style="background:rgba(110,86,207,0.35);color:#a78bfa;border-radius:3px;padding:1px 2px;">${escapeHtml(m.match)}</mark>`;
+        cursor = m.index + m.match.length;
+      }
+      html += escapeHtml(testString.slice(cursor));
 
-      return { matches, error: null, highlighted };
-    } catch (e: any) {
-      return { matches: [], error: e.message, highlighted: testString };
+      return { matches, error: null, highlighted: html };
+    } catch (e: unknown) {
+      return { matches: [], error: errorMessage(e, "Invalid regex"), highlighted: escapeHtml(testString) };
     }
   }, [pattern, flags, testString]);
 
@@ -64,7 +88,7 @@ export default function RegexTester() {
               onClick={() => setFlags((fl) => ({ ...fl, [f]: !fl[f] }))}
               className={`btn ${flags[f] ? "btn-primary" : "btn-ghost"} btn-sm`}
               style={{ fontFamily: "var(--font-mono)", fontSize: "1rem", width: "36px", padding: 0 }}
-              title={f === "g" ? "Global" : f === "i" ? "Case insensitive" : "Multiline"}
+              title={f === "g" ? "Global" : f === "i" ? "Case insensitive" : f === "m" ? "Multiline" : "Dot matches newline"}
             >
               {f}
             </button>
@@ -103,7 +127,7 @@ export default function RegexTester() {
           </div>
           <div
             style={{ padding: "16px", fontFamily: "var(--font-mono)", fontSize: "0.85rem", lineHeight: 2, whiteSpace: "pre-wrap", wordBreak: "break-all" }}
-            dangerouslySetInnerHTML={{ __html: highlighted || testString }}
+            dangerouslySetInnerHTML={{ __html: highlighted }}
           />
         </div>
       )}

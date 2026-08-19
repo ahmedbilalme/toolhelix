@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "ToolHelix — Free Online Tools for Developers & Everyone",
   description:
-    "20+ free, instant online tools: image converters, password generators, JSON formatters, calculators, and more. No signup. No clutter. Just results.",
+    `${TOOLS.length}+ free, instant online tools: image converters, password generators, JSON formatters, calculators, and more. No signup. No clutter. Just results.`,
 };
 
 const featuredTools = getFeaturedTools();

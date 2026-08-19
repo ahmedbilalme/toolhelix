@@ -1,7 +1,9 @@
 "use client";
 import { useState, useCallback } from "react";
-import { resizeImage, downloadBase64, formatBytes } from "@/lib/api";
+import { resizeImage, downloadBase64, formatBytes, errorMessage, type ImageResizeResponse } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 export default function ImageResizer() {
   const [file, setFile] = useState<File | null>(null);
@@ -12,12 +14,13 @@ export default function ImageResizer() {
   const [lock, setLock] = useState(true);
   const [format, setFormat] = useState("WEBP");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ImageResizeResponse | null>(null);
   const [dragging, setDragging] = useState(false);
   const { toast, ToastContainer } = useToast();
 
   const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith("image/")) { toast("Upload an image file", "error"); return; }
+    if (f.size > MAX_FILE_SIZE) { toast(`Image is too large (max ${formatBytes(MAX_FILE_SIZE)})`, "error"); return; }
     setFile(f);
     setResult(null);
     const url = URL.createObjectURL(f);
@@ -33,29 +36,35 @@ export default function ImageResizer() {
 
   const handleWidthChange = (val: string) => {
     setWidth(val);
-    if (lock && origDims.w && origDims.h) {
+    const n = Number(val);
+    if (lock && origDims.w && origDims.h && n > 0) {
       const ratio = origDims.h / origDims.w;
-      setHeight(String(Math.round(Number(val) * ratio)));
+      setHeight(String(Math.round(n * ratio)));
     }
   };
 
   const handleHeightChange = (val: string) => {
     setHeight(val);
-    if (lock && origDims.w && origDims.h) {
+    const n = Number(val);
+    if (lock && origDims.w && origDims.h && n > 0) {
       const ratio = origDims.w / origDims.h;
-      setWidth(String(Math.round(Number(val) * ratio)));
+      setWidth(String(Math.round(n * ratio)));
     }
   };
 
   const handleResize = async () => {
     if (!file) return;
+    const w = Number(width);
+    const h = Number(height);
+    if (!Number.isFinite(w) || w <= 0) { toast("Enter a width greater than 0", "error"); return; }
+    if (!lock && (!Number.isFinite(h) || h <= 0)) { toast("Enter a height greater than 0", "error"); return; }
     setLoading(true);
     try {
       const res = await resizeImage(file, Number(width), Number(height), lock, format);
       setResult(res);
       toast(`Resized to ${res.new_dimensions.width}×${res.new_dimensions.height}`, "success");
-    } catch (e: any) {
-      toast(e.message, "error");
+    } catch (e: unknown) {
+      toast(errorMessage(e), "error");
     } finally {
       setLoading(false);
     }
@@ -72,6 +81,10 @@ export default function ImageResizer() {
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
         onClick={() => document.getElementById("resize-input")?.click()}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("resize-input")?.click(); } }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload an image to resize"
         style={{ marginBottom: "24px" }}
       >
         <input id="resize-input" type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -102,6 +115,8 @@ export default function ImageResizer() {
             onClick={() => setLock(!lock)}
             className={`btn ${lock ? "btn-primary" : "btn-secondary"} btn-sm`}
             title="Lock aspect ratio"
+            aria-label={lock ? "Aspect ratio locked — click to unlock" : "Aspect ratio unlocked — click to lock"}
+            aria-pressed={lock}
             style={{ marginBottom: "1px" }}
           >
             {lock ? "🔒" : "🔓"}

@@ -31,12 +31,14 @@ export function Toast({ message, type = "info", duration = 3000, onClose }: Toas
   );
 }
 
+let toastIdCounter = 0;
+
 // Simple imperative toast hook
 export function useToast() {
   const [toasts, setToasts] = useState<Array<{ id: string; message: string; type: "success" | "error" | "info" }>>([]);
 
   function toast(message: string, type: "success" | "error" | "info" = "info") {
-    const id = Date.now().toString();
+    const id = `${Date.now()}-${++toastIdCounter}`;
     setToasts((prev) => [...prev, { id, message, type }]);
   }
 

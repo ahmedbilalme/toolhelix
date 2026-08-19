@@ -5,7 +5,6 @@ import Breadcrumb from "@/components/ui/Breadcrumb";
 import ToolCard from "@/components/ui/ToolCard";
 import {
   TOOLS,
-  CATEGORIES,
   getToolBySlug,
   getCategoryById,
   getRelatedTools,
@@ -70,7 +69,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = getCategoryById(category as CategoryId);
 
   return {
-    title: `${tool.name} — Free Online ${tool.name}`,
+    title: `${tool.name} — Free Online Tool | ${cat?.name ?? "ToolHelix"}`,
     description: tool.longDescription,
     keywords: tool.keywords,
     openGraph: {
@@ -107,9 +106,23 @@ export default async function ToolPage({ params }: Props) {
     provider: { "@type": "Organization", name: "ToolHelix", url: "https://toolhelix.com" },
   };
 
+  // JSON-LD: FAQPage schema
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: tool.faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {tool.faq.length > 0 && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      )}
 
       {/* Tool header */}
       <section style={{ padding: "40px 0 32px", borderBottom: "1px solid var(--color-border)" }}>
@@ -221,6 +234,29 @@ export default async function ToolPage({ params }: Props) {
           </p>
         </div>
       </section>
+
+      {/* FAQ */}
+      {tool.faq.length > 0 && (
+        <section style={{ padding: "48px 0", borderTop: "1px solid var(--color-border)" }}>
+          <div className="container" style={{ maxWidth: "800px" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.4rem", marginBottom: "24px" }}>
+              Frequently asked questions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {tool.faq.map((item) => (
+                <div key={item.question} className="card">
+                  <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.95rem", margin: "0 0 8px", color: "var(--color-text)" }}>
+                    {item.question}
+                  </h3>
+                  <p style={{ color: "var(--color-text-muted)", fontSize: "0.88rem", lineHeight: 1.7, margin: 0 }}>
+                    {item.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Related tools */}
       {relatedTools.length > 0 && (

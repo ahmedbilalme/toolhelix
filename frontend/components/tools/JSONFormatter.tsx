@@ -1,7 +1,18 @@
 "use client";
 import { useState, useCallback } from "react";
-import { formatJSON, copyToClipboard } from "@/lib/api";
+import { formatJSON, copyToClipboard, errorMessage, type JsonValue } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+
+function sortKeysDeep(obj: JsonValue): JsonValue {
+  if (Array.isArray(obj)) return obj.map(sortKeysDeep);
+  if (obj !== null && typeof obj === "object") {
+    return Object.keys(obj).sort().reduce((acc: Record<string, JsonValue>, key: string) => {
+      acc[key] = sortKeysDeep((obj as Record<string, JsonValue>)[key]);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
 
 export default function JSONFormatter() {
   const [input, setInput] = useState("");
@@ -28,12 +39,13 @@ export default function JSONFormatter() {
     } catch {
       // Fallback to browser-only formatting
       try {
-        const parsed = JSON.parse(input);
-        const formatted = JSON.stringify(parsed, sortKeys ? (_, v) => v : undefined, indent);
+        let parsed = JSON.parse(input);
+        if (sortKeys && typeof parsed === "object" && parsed !== null) parsed = sortKeysDeep(parsed);
+        const formatted = JSON.stringify(parsed, null, indent);
         setResult({ valid: true, formatted, type: typeof parsed });
         toast("JSON formatted!", "success");
-      } catch (e: any) {
-        setResult({ valid: false, error: e.message });
+      } catch (e: unknown) {
+        setResult({ valid: false, error: errorMessage(e, "Invalid JSON") });
         toast("Invalid JSON", "error");
       }
     } finally {

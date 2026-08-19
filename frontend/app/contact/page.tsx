@@ -122,7 +122,7 @@ export default function ContactPage() {
               </h2>
               <p style={{ color: "var(--color-text-muted)", marginBottom: "28px", lineHeight: 1.6 }}>
                 Thanks for reaching out, <strong style={{ color: "var(--color-text)" }}>{form.name}</strong>.
-                We'll get back to you at <strong style={{ color: "var(--color-text)" }}>{form.email}</strong> soon.
+                We’ll get back to you at <strong style={{ color: "var(--color-text)" }}>{form.email}</strong> soon.
               </p>
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
                 <button onClick={handleReset} className="btn btn-secondary btn-md">
